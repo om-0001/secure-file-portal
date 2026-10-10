@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: secure_portal_db
+    restart: always
+    environment:
+      POSTGRES_DB: secure_file_portal
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # ClamAV Antivirus Daemon
+  clamav:
+    image: clamav/clamav:latest
+    container_name: secure_portal_clamav
+    restart: always
+    ports:
+      - "3310:3310"
+    volumes:
+      - clamav_data:/var/lib/clamav
+
+volumes:
+  postgres_data:
+  clamav_data:

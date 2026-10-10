@@ -1,0 +1,3 @@
+Secure File Exchange Portal - Sample Test Document.
+This text document is used for testing file upload, AES-256-GCM encryption, integrity verification, and ephemeral link sharing.
+Confidentiality, Integrity, and Availability are maintained.
