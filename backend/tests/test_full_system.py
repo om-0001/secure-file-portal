@@ -325,3 +325,196 @@ class FullSecuritySystemTests(APITestCase):
         res_stream_ok = self.client.get(f"{view_url}?password=SuperSecretPassword123!")
         self.assertEqual(res_stream_ok.status_code, status.HTTP_200_OK)
 
+    def test_11_cross_platform_external_sharing_and_tracking(self):
+        """TC24: Cross-platform sharing (WhatsApp, Gmail, Telegram) tracking and history audit."""
+        file_id = self._upload_safe_file_helper()
+
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token_alice.key)
+        share_payload = {
+            'file_id': file_id,
+            'receiver_email': 'bob@example.com',
+            'subject': 'Cross-Platform Quarterly Report',
+            'message': 'Shared with you via WhatsApp/Gmail.',
+            'access_type': 'VIEW_ONLY',
+            'duration_minutes': 60,
+            'max_accesses': 3,
+            'sharing_method': 'WHATSAPP'
+        }
+        share_res = self.client.post(self.share_url, share_payload, format='json')
+        self.assertEqual(share_res.status_code, status.HTTP_201_CREATED)
+        policy_id = share_res.data['policy']['id']
+        raw_token = share_res.data['raw_token']
+
+        # Verify initial policy contains sharing_method and is_external
+        self.assertEqual(share_res.data['policy']['sharing_method'], 'WHATSAPP')
+        self.assertTrue(share_res.data['policy']['is_external'])
+        self.assertEqual(share_res.data['policy']['effective_status'], 'Active')
+
+        # Alice tracks sharing via Telegram
+        track_url = reverse('access_control:track-external-share', kwargs={'pk': policy_id})
+        track_res = self.client.post(track_url, {'sharing_method': 'TELEGRAM'}, format='json')
+        self.assertEqual(track_res.status_code, status.HTTP_200_OK)
+        self.assertEqual(track_res.data['policy']['sharing_method'], 'TELEGRAM')
+
+        # Check policy audit history
+        history_url = reverse('access_control:policy-history', kwargs={'pk': policy_id})
+        hist_res = self.client.get(history_url)
+        self.assertEqual(hist_res.status_code, status.HTTP_200_OK)
+        event_types = [log['event_type'] for log in hist_res.data]
+        self.assertIn('EXTERNAL_SHARE', event_types)
+
+        # Bob accesses link
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token_bob.key)
+        view_url = reverse('access_control:view-stream', kwargs={'token': raw_token})
+        view_res = self.client.get(view_url)
+        self.assertEqual(view_res.status_code, status.HTTP_200_OK)
+
+        # Verify last_accessed_at was updated on policy
+        policy = AccessPolicy.objects.get(id=policy_id)
+        self.assertIsNotNone(policy.last_accessed_at)
+        self.assertEqual(policy.access_count, 1)
+
+    def test_12_cross_platform_sharing_revocation(self):
+        """TC25: Cross-platform shared link is immediately invalidated on sender revocation."""
+        file_id = self._upload_safe_file_helper()
+
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token_alice.key)
+        share_payload = {
+            'file_id': file_id,
+            'receiver_email': 'bob@example.com',
+            'access_type': 'DOWNLOAD',
+            'duration_minutes': 60,
+            'max_accesses': 5,
+            'sharing_method': 'WHATSAPP'
+        }
+        share_res = self.client.post(self.share_url, share_payload, format='json')
+        policy_id = share_res.data['policy']['id']
+        raw_token = share_res.data['raw_token']
+
+        # Alice immediately revokes the link from dashboard
+        revoke_url = reverse('access_control:revoke-access-alt', kwargs={'pk': policy_id})
+        revoke_res = self.client.post(revoke_url)
+        self.assertEqual(revoke_res.status_code, status.HTTP_200_OK)
+        self.assertEqual(revoke_res.data['policy']['effective_status'], 'Revoked')
+
+        # Bob clicks the WhatsApp link and attempts download -> Rejected
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token_bob.key)
+        download_url = reverse('access_control:download-stream', kwargs={'token': raw_token})
+        res = self.client.get(download_url)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn("revoked", str(res.data).lower())
+
+    def test_13_cross_platform_sharing_unauthorized_forwarding(self):
+        """TC26: If Bob forwards WhatsApp/Telegram link to Charlie, Charlie is strictly rejected."""
+        file_id = self._upload_safe_file_helper()
+
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token_alice.key)
+        share_payload = {
+            'file_id': file_id,
+            'receiver_email': 'bob@example.com',
+            'access_type': 'VIEW_ONLY',
+            'duration_minutes': 60,
+            'max_accesses': 5,
+            'sharing_method': 'GMAIL'
+        }
+        share_res = self.client.post(self.share_url, share_payload, format='json')
+        raw_token = share_res.data['raw_token']
+
+        # Charlie (interceptor) receives forwarded link and tries to validate and view
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token_charlie.key)
+        validate_url = reverse('access_control:validate-token', kwargs={'token': raw_token})
+        val_res = self.client.get(validate_url)
+        self.assertEqual(val_res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn("designated recipient", str(val_res.data))
+
+        view_url = reverse('access_control:view-stream', kwargs={'token': raw_token})
+        view_res = self.client.get(view_url)
+        self.assertEqual(view_res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn("designated recipient", str(view_res.data))
+
+    def test_14_cross_platform_sharing_expiry_rejection(self):
+        """TC27: Link shared externally via Telegram/WhatsApp is rejected after expiration timestamp."""
+        file_id = self._upload_safe_file_helper()
+
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token_alice.key)
+        share_payload = {
+            'file_id': file_id,
+            'receiver_email': 'bob@example.com',
+            'access_type': 'VIEW_ONLY',
+            'duration_minutes': 1,
+            'max_accesses': 5,
+            'sharing_method': 'TELEGRAM'
+        }
+        share_res = self.client.post(self.share_url, share_payload, format='json')
+        policy_id = share_res.data['policy']['id']
+        raw_token = share_res.data['raw_token']
+
+        # Force policy to be expired in database
+        policy = AccessPolicy.objects.get(id=policy_id)
+        policy.expires_at = timezone.now() - timedelta(minutes=5)
+        policy.save()
+
+        # Bob attempts access after expiry
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token_bob.key)
+        validate_url = reverse('access_control:validate-token', kwargs={'token': raw_token})
+        res = self.client.get(validate_url)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn("expired", str(res.data).lower())
+
+    def test_15_cross_platform_sharing_access_limit_burn_after_reading(self):
+        """TC28: Link shared externally with max_accesses=1 is burned after single access."""
+        file_id = self._upload_safe_file_helper()
+
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token_alice.key)
+        share_payload = {
+            'file_id': file_id,
+            'receiver_email': 'bob@example.com',
+            'access_type': 'DOWNLOAD',
+            'duration_minutes': 60,
+            'max_accesses': 1,
+            'sharing_method': 'WHATSAPP'
+        }
+        share_res = self.client.post(self.share_url, share_payload, format='json')
+        policy_id = share_res.data['policy']['id']
+        raw_token = share_res.data['raw_token']
+
+        # Access 1 by Bob -> Allowed
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token_bob.key)
+        download_url = reverse('access_control:download-stream', kwargs={'token': raw_token})
+        res1 = self.client.get(download_url)
+        self.assertEqual(res1.status_code, status.HTTP_200_OK)
+
+        # Access 2 by Bob -> Rejected: Access limit reached
+        res2 = self.client.get(download_url)
+        self.assertEqual(res2.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn("limit", str(res2.data).lower())
+
+        # Verify effective_status in serializer is "Access Limit Reached"
+        policy = AccessPolicy.objects.get(id=policy_id)
+        self.assertEqual(policy.access_count, 1)
+        self.assertFalse(policy.is_valid_count())
+
+    def test_16_all_supported_sharing_channels_tracked(self):
+        """TC29: All external channels (WhatsApp, Gmail, Telegram, Native, Clipboard) can be tracked."""
+        file_id = self._upload_safe_file_helper()
+
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token_alice.key)
+        share_payload = {
+            'file_id': file_id,
+            'receiver_email': 'bob@example.com',
+            'access_type': 'VIEW_ONLY',
+            'duration_minutes': 60,
+            'max_accesses': 5,
+        }
+        share_res = self.client.post(self.share_url, share_payload, format='json')
+        policy_id = share_res.data['policy']['id']
+
+        channels = ['WHATSAPP', 'GMAIL', 'TELEGRAM', 'NATIVE', 'CLIPBOARD']
+        track_url = reverse('access_control:track-external-share', kwargs={'pk': policy_id})
+
+        for channel in channels:
+            res = self.client.post(track_url, {'sharing_method': channel}, format='json')
+            self.assertEqual(res.status_code, status.HTTP_200_OK)
+            self.assertEqual(res.data['policy']['sharing_method'], channel)
+            self.assertTrue(res.data['policy']['is_external'])
+

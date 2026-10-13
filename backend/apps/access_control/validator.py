@@ -201,13 +201,14 @@ def validate_access_policy(
         # Lock row for update to prevent concurrent race condition bypass
         locked_policy = AccessPolicy.objects.select_for_update().get(id=policy.id)
         locked_policy.access_count += 1
+        locked_policy.last_accessed_at = timezone.now()
 
         if locked_policy.access_count >= locked_policy.max_accesses:
             locked_policy.status = PolicyStatus.LIMIT_REACHED
             token_record.is_active = False
             token_record.save(update_fields=['is_active'])
 
-        locked_policy.save(update_fields=['access_count', 'status'])
+        locked_policy.save(update_fields=['access_count', 'status', 'last_accessed_at'])
         policy = locked_policy
 
     # Step 11: Decrypt Payload from Encrypted Vault

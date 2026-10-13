@@ -28,7 +28,7 @@ export default function StatusBadge({ status }) {
     );
   }
 
-  if (norm === 'LIMIT_REACHED') {
+  if (norm === 'LIMIT_REACHED' || norm === 'ACCESS LIMIT REACHED') {
     return (
       <span className="badge badge-limit">
         <Lock size={12} /> LIMIT REACHED

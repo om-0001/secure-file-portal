@@ -22,6 +22,7 @@ class AccessPolicySerializer(serializers.ModelSerializer):
     requires_password = serializers.SerializerMethodField()
     raw_token = serializers.SerializerMethodField()
     share_url = serializers.SerializerMethodField()
+    effective_status = serializers.SerializerMethodField()
 
     class Meta:
         model = AccessPolicy
@@ -30,11 +31,17 @@ class AccessPolicySerializer(serializers.ModelSerializer):
             'file',
             'sender',
             'receiver',
+            'subject',
+            'message',
             'access_type',
             'expires_at',
             'max_accesses',
             'access_count',
             'status',
+            'effective_status',
+            'sharing_method',
+            'last_accessed_at',
+            'is_external',
             'created_at',
             'revoked_at',
             'is_valid_now',
@@ -43,6 +50,15 @@ class AccessPolicySerializer(serializers.ModelSerializer):
             'share_url'
         ]
         read_only_fields = fields
+
+    def get_effective_status(self, obj) -> str:
+        if obj.status == PolicyStatus.REVOKED:
+            return 'Revoked'
+        if obj.access_count >= obj.max_accesses or obj.status == PolicyStatus.LIMIT_REACHED:
+            return 'Access Limit Reached'
+        if timezone.now() >= obj.expires_at or obj.status == PolicyStatus.EXPIRED:
+            return 'Expired'
+        return 'Active'
 
     def get_is_valid_now(self, obj) -> bool:
         return obj.is_active()
@@ -74,12 +90,31 @@ class CreateShareLinkSerializer(serializers.Serializer):
     file_id = serializers.UUIDField(required=True)
     receiver_id = serializers.UUIDField(required=False)
     receiver_email = serializers.EmailField(required=False)
+    subject = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        default='',
+        max_length=255,
+        help_text="Optional subject line"
+    )
+    message = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        default='',
+        help_text="Optional communication message"
+    )
     file_password = serializers.CharField(
         required=False,
         allow_blank=True,
         default='',
         max_length=100,
         help_text="Optional password required to unlock and open file"
+    )
+    sharing_method = serializers.CharField(
+        required=False,
+        default='DIRECT',
+        max_length=30,
+        help_text="Optional initial sharing channel (e.g. WHATSAPP, GMAIL, TELEGRAM, DIRECT)"
     )
     access_type = serializers.ChoiceField(
         choices=AccessType.choices,

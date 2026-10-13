@@ -12,7 +12,9 @@ from access_control.views import (
     SenderSharesListView,
     ReceiverSharesListView,
     AccessHistoryView,
-    SecurityStatsView
+    SecurityStatsView,
+    TrackExternalShareView,
+    PolicyAccessHistoryView
 )
 
 app_name = 'access_control'
@@ -24,6 +26,8 @@ urlpatterns = [
     path('shares/received/', ReceiverSharesListView.as_view(), name='receiver-shares'),
     path('revoke/<uuid:pk>/', RevokeAccessView.as_view(), name='revoke-access'),
     path('shares/<uuid:pk>/revoke/', RevokeAccessView.as_view(), name='revoke-access-alt'),
+    path('shares/<uuid:pk>/track-share/', TrackExternalShareView.as_view(), name='track-external-share'),
+    path('shares/<uuid:pk>/history/', PolicyAccessHistoryView.as_view(), name='policy-history'),
     path('token/<str:token>/validate/', ValidateTokenView.as_view(), name='validate-token'),
     path('token/<str:token>/view/', ViewOnlyStreamView.as_view(), name='view-stream'),
     path('token/<str:token>/download/', DownloadStreamView.as_view(), name='download-stream'),

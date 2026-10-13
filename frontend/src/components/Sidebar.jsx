@@ -1,12 +1,12 @@
 import React from 'react';
-import { 
-  LayoutDashboard, 
-  UploadCloud, 
-  Share2, 
-  Inbox, 
-  ShieldAlert, 
-  History, 
-  Lock 
+import {
+  LayoutDashboard,
+  UploadCloud,
+  Share2,
+  Inbox,
+  ShieldAlert,
+  History,
+  Lock
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 

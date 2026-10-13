@@ -2,7 +2,7 @@
  * Centralized API Client with Token Authentication.
  */
 
-const API_BASE_URL = 'http://localhost:8000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export function getAuthToken() {
   return localStorage.getItem('auth_token');
@@ -50,8 +50,25 @@ export async function apiRequest(endpoint, options = {}) {
     headers,
   };
 
-  const url = `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`;
-  const response = await fetch(url, config);
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : '/' + endpoint;
+  const primaryUrl = `${API_BASE_URL}${cleanEndpoint}`;
+  let response;
+
+  try {
+    response = await fetch(primaryUrl, config);
+  } catch (networkError) {
+    // Fallback: In development only, if proxy or localhost resolution failed, try direct 127.0.0.1:8000 IPv4
+    if (import.meta.env.DEV && !primaryUrl.includes('127.0.0.1:8000')) {
+      const fallbackUrl = `http://127.0.0.1:8000/api${cleanEndpoint}`;
+      try {
+        response = await fetch(fallbackUrl, config);
+      } catch {
+        throw networkError;
+      }
+    } else {
+      throw networkError;
+    }
+  }
 
   if (response.status === 204) {
     return null;

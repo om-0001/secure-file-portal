@@ -68,6 +68,31 @@ class AccessPolicy(models.Model):
         default='',
         help_text="Optional PBKDF2/SHA-256 hashed password protecting link access"
     )
+    subject = models.CharField(
+        max_length=255,
+        blank=True,
+        default='',
+        help_text="Optional subject line (Gmail style)"
+    )
+    message = models.TextField(
+        blank=True,
+        default='',
+        help_text="Optional communication message to the recipient (Gmail style)"
+    )
+    sharing_method = models.CharField(
+        max_length=30,
+        default='DIRECT',
+        help_text="Sharing channel used: DIRECT, WHATSAPP, GMAIL, TELEGRAM, NATIVE, CLIPBOARD"
+    )
+    last_accessed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp of most recent successful access"
+    )
+    is_external = models.BooleanField(
+        default=False,
+        help_text="True if shared externally via WhatsApp, Gmail, Telegram, etc."
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     revoked_at = models.DateTimeField(null=True, blank=True)
 

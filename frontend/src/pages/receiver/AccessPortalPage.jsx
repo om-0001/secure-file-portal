@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  ShieldAlert, 
-  Lock, 
-  Eye, 
-  Download, 
-  AlertTriangle, 
-  Clock, 
-  UserCheck, 
-  FileText, 
+import {
+  ShieldAlert,
+  Lock,
+  Eye,
+  Download,
+  AlertTriangle,
+  Clock,
+  UserCheck,
+  FileText,
   Ban,
   ArrowRight,
-  KeyRound
+  KeyRound,
+  Mail
 } from 'lucide-react';
 import { apiRequest } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
@@ -190,6 +191,34 @@ export default function AccessPortalPage({ token, onOpenViewer, onNavigateToLogi
                 ACCESS GRANTED • RECEIVER VERIFIED
               </div>
             </div>
+
+            {/* Sender's Secure Message (Gmail style) */}
+            {(fileMeta.subject || fileMeta.message) && (
+              <div
+                style={{
+                  background: 'rgba(30, 41, 59, 0.75)',
+                  border: '1px solid rgba(59, 130, 246, 0.3)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: 16,
+                  marginBottom: 16,
+                  textAlign: 'left'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, color: 'var(--accent-blue)', fontSize: '0.85rem', fontWeight: 600 }}>
+                  <Mail size={16} /> Secure Message from {fileMeta.sender_email}
+                </div>
+                {fileMeta.subject && (
+                  <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#fff', marginBottom: 6 }}>
+                    Subject: {fileMeta.subject}
+                  </div>
+                )}
+                {fileMeta.message && (
+                  <div style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', lineHeight: 1.5, background: 'rgba(15, 23, 42, 0.5)', padding: 12, borderRadius: 'var(--radius-sm)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    {fileMeta.message}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div style={{ background: 'rgba(15, 23, 42, 0.75)', padding: 16, borderRadius: 'var(--radius-md)', fontSize: '0.85rem', marginBottom: 20 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>

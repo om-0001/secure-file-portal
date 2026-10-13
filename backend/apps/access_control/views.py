@@ -55,6 +55,9 @@ class CreateShareLinkView(APIView):
         file_password = data.get('file_password', '').strip()
         pwd_hash = make_password(file_password) if file_password else ''
 
+        sharing_channel = data.get('sharing_method', 'DIRECT').upper()
+        is_ext = sharing_channel in ['WHATSAPP', 'GMAIL', 'TELEGRAM', 'NATIVE']
+
         # 1. Create Access Policy
         policy = AccessPolicy.objects.create(
             file=file_record,
@@ -62,6 +65,10 @@ class CreateShareLinkView(APIView):
             receiver=data['resolved_receiver'],
             access_type=data['access_type'],
             password_hash=pwd_hash,
+            subject=data.get('subject', '').strip(),
+            message=data.get('message', '').strip(),
+            sharing_method=sharing_channel,
+            is_external=is_ext,
             expires_at=expires_at,
             max_accesses=data['max_accesses'],
             access_count=0,
@@ -130,6 +137,8 @@ class ValidateTokenView(APIView):
             "file_size": policy.file.file_size_bytes,
             "mime_type": policy.file.mime_type,
             "access_type": policy.access_type,
+            "subject": policy.subject,
+            "message": policy.message,
             "sender_email": policy.sender.email,
             "receiver_email": policy.receiver.email,
             "expires_at": policy.expires_at,
@@ -225,6 +234,67 @@ class RevokeAccessView(APIView):
             "message": "Access link revoked successfully.",
             "policy": AccessPolicySerializer(policy).data
         }, status=status.HTTP_200_OK)
+
+
+class TrackExternalShareView(APIView):
+    """
+    Records an external share event (WhatsApp, Gmail, Telegram, Native, Copy Link)
+    and updates the policy's sharing method and audit trail.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            policy = AccessPolicy.objects.select_related('file', 'receiver').get(id=pk, sender=request.user)
+        except AccessPolicy.DoesNotExist:
+            raise NotFound("Policy not found or you are not authorized to track it.")
+
+        method = request.data.get('sharing_method', 'EXTERNAL').upper()
+        allowed_methods = ['WHATSAPP', 'GMAIL', 'TELEGRAM', 'NATIVE', 'CLIPBOARD', 'DIRECT']
+        if method not in allowed_methods:
+            method = 'EXTERNAL'
+
+        policy.sharing_method = method
+        policy.is_external = True
+        policy.save(update_fields=['sharing_method', 'is_external'])
+
+        # Record in audit trail
+        AccessLog.objects.create(
+            policy=policy,
+            file=policy.file,
+            user=request.user,
+            event_type='EXTERNAL_SHARE',
+            status='SUCCESS',
+            ip_address=get_client_ip(request),
+            user_agent=get_user_agent(request),
+            details=f"Secure access link shared externally via {method} with intended recipient {policy.receiver.email}."
+        )
+
+        return Response({
+            "message": f"External share via {method} tracked successfully.",
+            "policy": AccessPolicySerializer(policy).data
+        }, status=status.HTTP_200_OK)
+
+
+class PolicyAccessHistoryView(generics.ListAPIView):
+    """
+    Returns the complete audit log trail for a specific access policy (shares, views, downloads, revocations, and unauthorized attempts).
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = AccessLogSerializer
+
+    def get_queryset(self):
+        pk = self.kwargs.get('pk')
+        user = self.request.user
+        try:
+            policy = AccessPolicy.objects.get(id=pk)
+            # Only sender or receiver can inspect this policy's history
+            if policy.sender != user and policy.receiver != user:
+                raise PermissionDenied("You do not have permission to view this policy's audit logs.")
+        except AccessPolicy.DoesNotExist:
+            raise NotFound("Policy not found.")
+
+        return AccessLog.objects.filter(policy=policy).order_by('-timestamp')
 
 
 class SenderSharesListView(generics.ListAPIView):
