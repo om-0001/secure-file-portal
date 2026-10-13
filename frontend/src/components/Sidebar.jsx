@@ -27,7 +27,7 @@ export default function Sidebar({ activeTab, onSelectTab }) {
     <aside
       style={{
         width: 260,
-        background: 'rgba(15, 23, 42, 0.5)',
+        background: 'var(--sidebar-bg, #ffffff)',
         borderRight: '1px solid var(--border-subtle)',
         padding: '24px 16px',
         display: 'flex',
@@ -54,8 +54,8 @@ export default function Sidebar({ activeTab, onSelectTab }) {
               padding: '12px 16px',
               borderRadius: 'var(--radius-md)',
               border: 'none',
-              background: isActive ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
-              color: isActive ? '#60a5fa' : 'var(--text-secondary)',
+              background: isActive ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
+              color: isActive ? 'var(--accent-blue, #2563eb)' : 'var(--text-secondary, #475569)',
               fontWeight: isActive ? 600 : 500,
               fontSize: '0.9rem',
               cursor: 'pointer',

@@ -3,29 +3,29 @@ import React from 'react';
 export default function StatCard({ title, value, icon: Icon, color = 'blue', subtitle }) {
   const colorMap = {
     blue: {
-      bg: 'rgba(59, 130, 246, 0.12)',
-      text: '#60a5fa',
-      border: 'rgba(59, 130, 246, 0.25)',
+      bg: 'rgba(37, 99, 235, 0.1)',
+      text: '#2563eb',
+      border: 'rgba(37, 99, 235, 0.2)',
     },
     emerald: {
-      bg: 'rgba(16, 185, 129, 0.12)',
-      text: '#34d399',
-      border: 'rgba(16, 185, 129, 0.25)',
+      bg: 'rgba(5, 150, 105, 0.1)',
+      text: '#059669',
+      border: 'rgba(5, 150, 105, 0.2)',
     },
     amber: {
-      bg: 'rgba(245, 158, 11, 0.12)',
-      text: '#fbbf24',
-      border: 'rgba(245, 158, 11, 0.25)',
+      bg: 'rgba(217, 119, 6, 0.1)',
+      text: '#d97706',
+      border: 'rgba(217, 119, 6, 0.2)',
     },
     rose: {
-      bg: 'rgba(239, 68, 68, 0.12)',
-      text: '#f87171',
-      border: 'rgba(239, 68, 68, 0.25)',
+      bg: 'rgba(220, 38, 38, 0.1)',
+      text: '#dc2626',
+      border: 'rgba(220, 38, 38, 0.2)',
     },
     purple: {
-      bg: 'rgba(139, 92, 246, 0.12)',
-      text: '#c084fc',
-      border: 'rgba(139, 92, 246, 0.25)',
+      bg: 'rgba(124, 58, 237, 0.1)',
+      text: '#7c3aed',
+      border: 'rgba(124, 58, 237, 0.2)',
     }
   };
 
@@ -55,7 +55,7 @@ export default function StatCard({ title, value, icon: Icon, color = 'blue', sub
         <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
           {title}
         </div>
-        <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#fff', marginTop: 2, fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
+        <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)', marginTop: 2, fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
           {value}
         </div>
         {subtitle && (

@@ -37,7 +37,7 @@ export default function LandingPage({ onNavigate }) {
         <h1 style={{ fontSize: '3rem', lineHeight: 1.15, marginBottom: 20 }}>
           Secure File Exchange Portal with<br />
           <span style={{
-            background: 'linear-gradient(135deg, #60a5fa 0%, #34d399 100%)',
+            background: 'linear-gradient(135deg, #2563eb 0%, #059669 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent'
           }}>

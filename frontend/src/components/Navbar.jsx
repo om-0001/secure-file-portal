@@ -9,7 +9,7 @@ export default function Navbar({ onNavigate, activeTab }) {
     <header
       style={{
         borderBottom: '1px solid var(--border-subtle)',
-        background: 'rgba(15, 23, 42, 0.85)',
+        background: 'var(--nav-bg, rgba(255, 255, 255, 0.9))',
         backdropFilter: 'blur(12px)',
         position: 'sticky',
         top: 0,
@@ -18,6 +18,7 @@ export default function Navbar({ onNavigate, activeTab }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
+        boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)',
       }}
     >
       <div
@@ -34,13 +35,13 @@ export default function Navbar({ onNavigate, activeTab }) {
             alignItems: 'center',
             justifyContent: 'center',
             color: '#fff',
-            boxShadow: '0 0 15px rgba(59, 130, 246, 0.4)',
+            boxShadow: '0 0 15px rgba(59, 130, 246, 0.3)',
           }}
         >
           <Shield size={22} />
         </div>
         <div>
-          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.1rem', color: '#fff', letterSpacing: '-0.01em' }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-primary, #0f172a)', letterSpacing: '-0.01em' }}>
             SECURE<span style={{ color: 'var(--accent-emerald)' }}>PORTAL</span>
           </div>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: 'var(--text-muted)', letterSpacing: '0.06em' }}>
@@ -58,14 +59,14 @@ export default function Navbar({ onNavigate, activeTab }) {
                 alignItems: 'center',
                 gap: 10,
                 padding: '6px 14px',
-                background: 'rgba(30, 41, 59, 0.6)',
+                background: 'var(--bg-tertiary, #f1f5f9)',
                 borderRadius: 'var(--radius-full)',
                 border: '1px solid var(--border-subtle)',
               }}
             >
               <UserIcon size={16} color="var(--accent-blue)" />
               <div style={{ fontSize: '0.85rem' }}>
-                <span style={{ fontWeight: 600, color: '#fff' }}>{user.username}</span>
+                <span style={{ fontWeight: 600, color: 'var(--text-primary, #0f172a)' }}>{user.username}</span>
               </div>
             </div>
 
