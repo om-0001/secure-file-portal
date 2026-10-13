@@ -76,7 +76,6 @@ export function AuthProvider({ children }) {
       setToken(null);
       setUser(null);
       try {
-        localStorage.clear();
         sessionStorage.clear();
       } catch (e) {
         // Ignore browser sandbox restrictions if any

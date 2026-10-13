@@ -31,27 +31,31 @@ function resolveApiBaseUrl() {
 const API_BASE_URL = resolveApiBaseUrl();
 
 export function getAuthToken() {
-  return localStorage.getItem('auth_token');
+  return sessionStorage.getItem('auth_token') || localStorage.getItem('auth_token');
 }
 
 export function setAuthToken(token) {
   if (token) {
-    localStorage.setItem('auth_token', token);
+    sessionStorage.setItem('auth_token', token);
+    try { localStorage.removeItem('auth_token'); } catch (e) {}
   } else {
-    localStorage.removeItem('auth_token');
+    sessionStorage.removeItem('auth_token');
+    try { localStorage.removeItem('auth_token'); } catch (e) {}
   }
 }
 
 export function getCurrentUser() {
-  const user = localStorage.getItem('auth_user');
+  const user = sessionStorage.getItem('auth_user') || localStorage.getItem('auth_user');
   return user ? JSON.parse(user) : null;
 }
 
 export function setCurrentUser(user) {
   if (user) {
-    localStorage.setItem('auth_user', JSON.stringify(user));
+    sessionStorage.setItem('auth_user', JSON.stringify(user));
+    try { localStorage.removeItem('auth_user'); } catch (e) {}
   } else {
-    localStorage.removeItem('auth_user');
+    sessionStorage.removeItem('auth_user');
+    try { localStorage.removeItem('auth_user'); } catch (e) {}
   }
 }
 
