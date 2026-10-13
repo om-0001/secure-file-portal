@@ -190,7 +190,16 @@ raw_cors = os.getenv(
     'http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:3000,http://127.0.0.1:3000'
 )
 CORS_ALLOWED_ORIGINS = [orig.strip() for orig in raw_cors.split(',') if orig.strip()]
+if 'https://secure-file-frontend-ufd1.onrender.com' not in CORS_ALLOWED_ORIGINS:
+    CORS_ALLOWED_ORIGINS.append('https://secure-file-frontend-ufd1.onrender.com')
+
 CORS_ALLOW_CREDENTIALS = True
+
+# Whitelist any subdomain on .onrender.com or .vercel.app
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https:\/\/.*\.onrender\.com$",
+    r"^https:\/\/.*\.vercel\.app$",
+]
 
 # Allow all origins only when DEBUG=True and not explicitly locked
 if DEBUG and not os.getenv('CORS_ALLOWED_ORIGINS'):
@@ -202,6 +211,10 @@ raw_csrf = os.getenv(
     'http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:3000,http://127.0.0.1:3000'
 )
 CSRF_TRUSTED_ORIGINS = [orig.strip() for orig in raw_csrf.split(',') if orig.strip()]
+if 'https://*.onrender.com' not in CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS.append('https://*.onrender.com')
+if 'https://secure-file-frontend-ufd1.onrender.com' not in CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS.append('https://secure-file-frontend-ufd1.onrender.com')
 
 
 # Production HTTPS, Cookies, and Proxy Headers
@@ -249,4 +262,7 @@ CLAMAV_HOST = os.getenv('CLAMAV_HOST', 'localhost')
 CLAMAV_PORT = int(os.getenv('CLAMAV_PORT', '3310'))
 
 # Frontend Host URL for generating full ephemeral links
-FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+FRONTEND_URL = os.getenv(
+    'FRONTEND_URL',
+    'http://localhost:5173' if DEBUG else 'https://secure-file-frontend-ufd1.onrender.com'
+)

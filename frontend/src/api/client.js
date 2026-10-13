@@ -2,7 +2,33 @@
  * Centralized API Client with Token Authentication.
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+function resolveApiBaseUrl() {
+  const envBase = import.meta.env.VITE_API_BASE_URL;
+
+  if (envBase && typeof envBase === 'string' && envBase.trim() !== '') {
+    let clean = envBase.trim().replace(/\/+$/, '');
+    if (!clean.startsWith('http://') && !clean.startsWith('https://') && !clean.startsWith('/')) {
+      if (!clean.includes('.')) {
+        clean = `https://${clean}.onrender.com`;
+      } else {
+        clean = `https://${clean}`;
+      }
+    }
+    if (clean.startsWith('http') && !clean.endsWith('/api')) {
+      clean = `${clean}/api`;
+    }
+    return clean;
+  }
+
+  // If accessed from a Render production domain and env var was empty/relative
+  if (typeof window !== 'undefined' && window.location.hostname.includes('.onrender.com')) {
+    return 'https://secure-file-backend-mciu.onrender.com/api';
+  }
+
+  return '/api';
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 export function getAuthToken() {
   return localStorage.getItem('auth_token');
@@ -82,6 +108,10 @@ export async function apiRequest(endpoint, options = {}) {
     data = await response.blob();
   } else {
     data = await response.text();
+    // Safety check: if an endpoint returned HTML (e.g. from static rewrite or misconfigured proxy)
+    if (typeof data === 'string' && (data.includes('<!doctype html') || data.includes('<html'))) {
+      throw new Error('API server returned HTML instead of JSON. Please check backend connection.');
+    }
   }
 
   if (!response.ok) {

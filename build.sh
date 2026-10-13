@@ -16,9 +16,11 @@ echo "==> Running static collection..."
 if [ -f "manage.py" ]; then
     python manage.py collectstatic --noinput
     python manage.py migrate --noinput
+    python manage.py seed_demo_data || true
 elif [ -f "backend/manage.py" ]; then
     python backend/manage.py collectstatic --noinput
     python backend/manage.py migrate --noinput
+    python backend/manage.py seed_demo_data || true
 fi
 
 echo "==> Build and database migrations complete."
