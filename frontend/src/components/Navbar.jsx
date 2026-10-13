@@ -70,7 +70,10 @@ export default function Navbar({ onNavigate, activeTab }) {
             </div>
 
             <button
-              onClick={logout}
+              onClick={async () => {
+                await logout();
+                onNavigate('landing');
+              }}
               className="btn btn-secondary btn-sm"
               title="Logout"
             >

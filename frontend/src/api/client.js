@@ -72,6 +72,7 @@ export async function apiRequest(endpoint, options = {}) {
   }
 
   const config = {
+    cache: 'no-store',
     ...options,
     headers,
   };

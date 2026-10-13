@@ -68,6 +68,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',  # Must be as high as possible
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',  # WhiteNoise for production static files
+    'config.middleware.NoCacheApiMiddleware',  # Prevent client/edge cache of private API responses
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',

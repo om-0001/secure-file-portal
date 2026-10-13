@@ -83,31 +83,30 @@ function AppContent() {
       );
     }
 
-    // Public Pages
-    if (!user) {
-      if (activeTab === 'login') return <LoginPage onNavigate={setActiveTab} />;
-      if (activeTab === 'register') return <RegisterPage onNavigate={setActiveTab} />;
-      return <LandingPage onNavigate={setActiveTab} />;
-    }
+    // Explicit public routes even if a user session is active (e.g. switching accounts)
+    if (activeTab === 'login') return <LoginPage onNavigate={setActiveTab} />;
+    if (activeTab === 'register') return <RegisterPage onNavigate={setActiveTab} />;
+    if (activeTab === 'landing' || !user) return <LandingPage onNavigate={setActiveTab} />;
 
-    // Authenticated Unified Portal
+    // Authenticated Unified Portal - keyed by user id so switching users completely resets state
+    const portalKey = user?.id || user?.username || 'portal';
     switch (activeTab) {
       case 'send':
       case 'upload':
-        return <UnifiedPortal onOpenViewer={handleOpenViewer} onOpenPortal={handleOpenPortalFromReceiver} initialTab="send" />;
+        return <UnifiedPortal key={portalKey} onOpenViewer={handleOpenViewer} onOpenPortal={handleOpenPortalFromReceiver} initialTab="send" />;
       case 'sent':
       case 'shares':
-        return <UnifiedPortal onOpenViewer={handleOpenViewer} onOpenPortal={handleOpenPortalFromReceiver} initialTab="sent" />;
+        return <UnifiedPortal key={portalKey} onOpenViewer={handleOpenViewer} onOpenPortal={handleOpenPortalFromReceiver} initialTab="sent" />;
       case 'received':
-        return <UnifiedPortal onOpenViewer={handleOpenViewer} onOpenPortal={handleOpenPortalFromReceiver} initialTab="received" />;
+        return <UnifiedPortal key={portalKey} onOpenViewer={handleOpenViewer} onOpenPortal={handleOpenPortalFromReceiver} initialTab="received" />;
       case 'unlock':
-        return <UnifiedPortal onOpenViewer={handleOpenViewer} onOpenPortal={handleOpenPortalFromReceiver} initialTab="unlock" />;
+        return <UnifiedPortal key={portalKey} onOpenViewer={handleOpenViewer} onOpenPortal={handleOpenPortalFromReceiver} initialTab="unlock" />;
       case 'security':
-        return <UnifiedPortal onOpenViewer={handleOpenViewer} onOpenPortal={handleOpenPortalFromReceiver} initialTab="security" />;
+        return <UnifiedPortal key={portalKey} onOpenViewer={handleOpenViewer} onOpenPortal={handleOpenPortalFromReceiver} initialTab="security" />;
       case 'portal':
       case 'dashboard':
       default:
-        return <UnifiedPortal onOpenViewer={handleOpenViewer} onOpenPortal={handleOpenPortalFromReceiver} initialTab="send" />;
+        return <UnifiedPortal key={portalKey} onOpenViewer={handleOpenViewer} onOpenPortal={handleOpenPortalFromReceiver} initialTab="send" />;
     }
   };
 

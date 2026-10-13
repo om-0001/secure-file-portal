@@ -100,10 +100,16 @@ export default function UnifiedPortal({ onOpenViewer, onOpenPortal, initialTab =
   const dropdownRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // Load all portal data
+  // Load all portal data whenever user changes or mounts
   useEffect(() => {
+    setStats(null);
+    setSentShares([]);
+    setReceivedShares([]);
+    setMyFiles([]);
+    setRegisteredReceivers([]);
+    setSecurityLogs([]);
     loadPortalData();
-  }, []);
+  }, [user?.id, user?.username]);
 
   // Sync initialTab if prop changes
   useEffect(() => {

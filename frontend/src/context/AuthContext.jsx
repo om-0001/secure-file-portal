@@ -26,26 +26,40 @@ export function AuthProvider({ children }) {
   }, [token]);
 
   const login = async (username, password) => {
+    // Clear any prior credentials before initiating a new login
+    setAuthToken(null);
+    setCurrentUser(null);
+    setToken(null);
+    setUser(null);
+
     const data = await apiRequest('/auth/login/', {
       method: 'POST',
       body: JSON.stringify({ username, password }),
     });
-    setToken(data.token);
+
+    // Synchronously set local storage before notifying state
     setAuthToken(data.token);
-    setUser(data.user);
     setCurrentUser(data.user);
+    setToken(data.token);
+    setUser(data.user);
     return data;
   };
 
   const register = async (payload) => {
+    setAuthToken(null);
+    setCurrentUser(null);
+    setToken(null);
+    setUser(null);
+
     const data = await apiRequest('/auth/register/', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
-    setToken(data.token);
+
     setAuthToken(data.token);
-    setUser(data.user);
     setCurrentUser(data.user);
+    setToken(data.token);
+    setUser(data.user);
     return data;
   };
 
@@ -57,10 +71,16 @@ export function AuthProvider({ children }) {
     } catch (err) {
       // Continue cleanup even if server call fails
     } finally {
-      setToken(null);
       setAuthToken(null);
-      setUser(null);
       setCurrentUser(null);
+      setToken(null);
+      setUser(null);
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (e) {
+        // Ignore browser sandbox restrictions if any
+      }
     }
   };
 
