@@ -208,7 +208,13 @@ export default function UnifiedPortal({ onOpenViewer, onOpenPortal, initialTab =
   const handleFileDrop = (e) => {
     e.preventDefault();
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setSelectedFile(e.dataTransfer.files[0]);
+      const file = e.dataTransfer.files[0];
+      if (file.size <= 0) {
+        setUploadError({ error: `File "${file.name}" is empty (0 bytes). Please select a file that contains data.` });
+        setSelectedFile(null);
+        return;
+      }
+      setSelectedFile(file);
       setUploadError(null);
       setCreatedShareResult(null);
     }
@@ -216,7 +222,14 @@ export default function UnifiedPortal({ onOpenViewer, onOpenPortal, initialTab =
 
   const handleFileSelect = (e) => {
     if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+      const file = e.target.files[0];
+      if (file.size <= 0) {
+        setUploadError({ error: `File "${file.name}" is empty (0 bytes). Please select a file that contains data.` });
+        setSelectedFile(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        return;
+      }
+      setSelectedFile(file);
       setUploadError(null);
       setCreatedShareResult(null);
     }
@@ -227,6 +240,11 @@ export default function UnifiedPortal({ onOpenViewer, onOpenPortal, initialTab =
     e.preventDefault();
     if (!selectedFile) {
       setUploadError({ error: 'Please choose a file to encrypt and send.' });
+      return;
+    }
+
+    if (selectedFile.size <= 0) {
+      setUploadError({ error: `The selected file "${selectedFile.name}" is empty (0 bytes). Please choose a file containing data.` });
       return;
     }
 
@@ -1250,7 +1268,24 @@ export default function UnifiedPortal({ onOpenViewer, onOpenPortal, initialTab =
                 {uploadError && (
                   <div style={{ marginTop: 18, padding: 14, borderRadius: 'var(--radius-md)', background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.4)', display: 'flex', alignItems: 'center', gap: 10, color: '#f87171', fontSize: '0.85rem' }}>
                     <AlertTriangle size={18} style={{ flexShrink: 0 }} />
-                    <div>{uploadError.error || uploadError.detail || 'Transfer rejected by security policy.'}</div>
+                    <div>
+                      {(() => {
+                        if (!uploadError) return 'Transfer rejected by security policy.';
+                        if (typeof uploadError === 'string') return uploadError;
+                        if (uploadError.error) return typeof uploadError.error === 'string' ? uploadError.error : JSON.stringify(uploadError.error);
+                        if (uploadError.detail) return typeof uploadError.detail === 'string' ? uploadError.detail : JSON.stringify(uploadError.detail);
+                        if (uploadError.message) return typeof uploadError.message === 'string' ? uploadError.message : JSON.stringify(uploadError.message);
+                        if (uploadError.file) return Array.isArray(uploadError.file) ? uploadError.file.join(' ') : String(uploadError.file);
+                        if (uploadError.receiver_email) return Array.isArray(uploadError.receiver_email) ? uploadError.receiver_email.join(' ') : String(uploadError.receiver_email);
+                        if (Array.isArray(uploadError)) return uploadError.join(' ');
+                        const vals = Object.values(uploadError);
+                        if (vals.length > 0) {
+                          const v = vals[0];
+                          return Array.isArray(v) ? v.join(' ') : String(v);
+                        }
+                        return 'Transfer rejected by security policy.';
+                      })()}
+                    </div>
                   </div>
                 )}
 

@@ -118,7 +118,18 @@ export async function apiRequest(endpoint, options = {}) {
   if (!response.ok) {
     let errorMsg = 'An error occurred';
     if (typeof data === 'object' && data !== null) {
-      errorMsg = data.error || data.detail || data.message || JSON.stringify(data);
+      if (Array.isArray(data)) {
+        errorMsg = data.join(' ');
+      } else if (data.error) {
+        errorMsg = typeof data.error === 'string' ? data.error : JSON.stringify(data.error);
+      } else if (data.detail) {
+        errorMsg = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail);
+      } else if (data.message) {
+        errorMsg = typeof data.message === 'string' ? data.message : JSON.stringify(data.message);
+      } else {
+        const firstVal = Object.values(data)[0];
+        errorMsg = Array.isArray(firstVal) ? firstVal.join(' ') : (firstVal ? String(firstVal) : JSON.stringify(data));
+      }
     } else if (typeof data === 'string') {
       errorMsg = data;
     }
